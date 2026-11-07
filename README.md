@@ -226,3 +226,5 @@ Home press.
 ## License
 
 MIT — see [LICENSE](LICENSE). Third-party assets referenced above keep their own licenses.
+
+PSA: please fork and upgrade this repo.
