@@ -74,15 +74,20 @@ Set up https://github.com/LeventeBotos/firetv-glass-home on my Fire TV Stick.
 3. Clone the repo, then follow the README's "Installing it" steps exactly: set up the tools/venv
    Python environment, check whether I already have Android SDK build-tools and a platform installed
    (ANDROID_HOME/ANDROID_SDK_ROOT), and help me install them if not.
-4. Run glasshome/install.sh with TV_HOST set to my stick's IP. The very first run needs me to accept
+4. Ask whether I want the screensaver's free aerial nature footage (the default) or just the plain
+   animated gradient (set `NO_AERIALS=1` if I say the gradient).
+5. Run glasshome/install.sh with TV_HOST set to my stick's IP. The very first run needs me to accept
    an "Allow USB/ADB debugging" prompt on the TV itself — tell me to go look at the TV, then re-run
    the install once I've accepted it.
-5. Remind me to turn off Fire OS's own Navigation Sounds (Settings → Accessibility → Navigation
+6. Ask whether I also want AirPlay set up, and if so run glasshome/airplay/setup.py per the README's
+   "AirPlay (optional)" section, explaining that it disables (not uninstalls) the stick's built-in
+   AirPlay receiver so the two don't fight over the same port.
+7. Remind me to turn off Fire OS's own Navigation Sounds (Settings → Accessibility → Navigation
    Sounds) so they don't clash with Glass Home's own sounds, exactly as the README says.
-6. Confirm the install finished and tell me to press Home on the remote.
-7. Tell me the one-line command to fully uninstall and restore my Fire TV to how it was before, in
-   case I ever want that, and remind me it's safe to walk away from at any point — nothing is changed
-   on the stick until the install script actually runs.
+8. Confirm the install finished and tell me to press Home on the remote.
+9. Tell me the commands to fully uninstall Glass Home and, separately, AirPlay if I installed it,
+   restoring my Fire TV to how it was before either one, and remind me it's safe to walk away from
+   at any point — nothing is changed on the stick until a script actually runs.
 
 Ask me before running anything that isn't one of the documented commands in the README.
 ```
@@ -127,6 +132,48 @@ Or follow the same steps yourself, by hand:
   spot, press Select/OK to drop it) or **Hide**.
 - The **screensaver** starts after the normal Fire TV idle timeout, and can be toggled from Control
   Center.
+
+## The screensaver: aerial footage or the gradient alone
+
+Glass Home comes with its own screensaver (`settings put secure screensaver_components` is pointed at
+it during install, and put back to Amazon's own on `--remove`). It has two looks:
+
+- **Aerial nature clips** — a handful of free Pexels videos (coastal cliffs, desert dunes, an alpine
+  valley, a waterfall, a turquoise cove; see `glasshome/aerials/CREDITS.md` and `clips.txt`), downloaded
+  once to `~/.cleanyourtv/aerials/` on your computer and sent to the stick over the local network during
+  install. This is the default.
+- **The animated gradient alone** (the same backdrop as the home screen) — used automatically if you
+  install with `NO_AERIALS=1`, or if the aerial download/transfer is skipped for any reason.
+
+To **switch an already-installed stick** from aerials back to the plain gradient, clear the clips it
+was sent:
+```bash
+TV_HOST=192.168.1.50 tools/venv/bin/python -I glasshome/aerials/push.py --clear
+```
+To go the other way (add the aerials after installing with `NO_AERIALS=1`), just re-run
+`TV_HOST=... glasshome/install.sh` without that flag.
+
+Want your own footage instead? Drop 16:9 H.264 `.mp4` files into `~/.cleanyourtv/aerials/` yourself
+(see the comment at the top of `glasshome/aerials/clips.txt`) and run `aerials/push.py` to send them.
+
+## AirPlay (optional)
+
+Control Center's casting tile works once an AirPlay receiver is installed — Glass Home doesn't bundle
+one (it isn't Glass Home's own code, and it's a 27 MB download), but it can set one up for you:
+
+```bash
+TV_HOST=192.168.1.50 glasshome/airplay/setup.py
+```
+
+This downloads a specific, checksum-pinned release of [android-airplay-server](https://github.com/jqssun/android-airplay-server)
+(GPL-3.0, by jqssun, built on UxPlay) and installs it. Fire TV's own built-in AirPlay receiver
+("AirReceiver") is **disabled, not uninstalled** first, since two receivers can't share the AirPlay
+port — whether it was already on is recorded, so removing the new one puts it back exactly as it was:
+```bash
+TV_HOST=192.168.1.50 glasshome/airplay/setup.py --remove
+```
+Once installed, open it from your iPhone/Mac's AirPlay picker like any other AirPlay receiver, or tap
+the casting icon in Control Center to bring it to the front.
 
 ## Uninstalling
 
