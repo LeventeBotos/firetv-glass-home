@@ -3,6 +3,8 @@
 A tvOS-style home screen for the Fire TV Stick. No root, fully reversible, no Apple-owned assets (no
 Apple logo, no SF Pro, no Apple sounds or wallpapers) — just the layout, the glass, and the motion.
 
+Created by [Levente Botos](https://github.com/LeventeBotos).
+
 ![Home screen](screenshots/home.png)
 
 ## What this is
@@ -55,6 +57,38 @@ uninstalled, nothing is disabled. One command puts it all back.
     3. Make sure `$ANDROID_HOME` (or `$ANDROID_SDK_ROOT`) points at the SDK folder, or that it's
        installed in the default location the scripts already look for
 
+## Set it up with an AI assistant
+
+Everything below is also written as a prompt, so a terminal-capable AI coding assistant (Claude Code,
+OpenAI Codex CLI, ChatGPT with its desktop/agent mode, etc.) can do the install for you — cloning the
+repo, installing the Android build tools if needed, pairing with the stick and running the install
+script. Open a terminal in an empty folder, start your assistant there, and paste this:
+
+```
+Set up https://github.com/LeventeBotos/firetv-glass-home on my Fire TV Stick.
+
+1. Read the repository's README.md in full before doing anything else.
+2. Ask me for my Fire TV Stick's IP address if I haven't given it to you, and confirm I've turned on
+   ADB Debugging under Settings → My Fire TV → Developer Options (tell me how to reveal that menu if
+   it's hidden, and to also enable "Apps from Unknown Sources").
+3. Clone the repo, then follow the README's "Installing it" steps exactly: set up the tools/venv
+   Python environment, check whether I already have Android SDK build-tools and a platform installed
+   (ANDROID_HOME/ANDROID_SDK_ROOT), and help me install them if not.
+4. Run glasshome/install.sh with TV_HOST set to my stick's IP. The very first run needs me to accept
+   an "Allow USB/ADB debugging" prompt on the TV itself — tell me to go look at the TV, then re-run
+   the install once I've accepted it.
+5. Remind me to turn off Fire OS's own Navigation Sounds (Settings → Accessibility → Navigation
+   Sounds) so they don't clash with Glass Home's own sounds, exactly as the README says.
+6. Confirm the install finished and tell me to press Home on the remote.
+7. Tell me the one-line command to fully uninstall and restore my Fire TV to how it was before, in
+   case I ever want that, and remind me it's safe to walk away from at any point — nothing is changed
+   on the stick until the install script actually runs.
+
+Ask me before running anything that isn't one of the documented commands in the README.
+```
+
+Or follow the same steps yourself, by hand:
+
 ## Installing it
 
 1. **Turn on ADB debugging on the stick.** Settings → My Fire TV (or Device) → Developer Options
@@ -63,7 +97,7 @@ uninstalled, nothing is disabled. One command puts it all back.
 2. **Find the stick's IP address.** Settings → My Fire TV → About → Network.
 3. **Clone this repository** on your computer:
    ```bash
-   git clone https://github.com/<you>/firetv-glass-home.git
+   git clone https://github.com/LeventeBotos/firetv-glass-home.git
    cd firetv-glass-home
    ```
 4. **Set up the Python side:**
