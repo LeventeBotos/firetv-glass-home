@@ -1,0 +1,17 @@
+# The screensaver's footage: free aerial nature clips from Pexels (https://www.pexels.com/license/), 1080p H.264.
+# One clip per line:  <pexels video id>  <fps in the file name>  <page URL>
+# fetch.py downloads them to ~/.cleanyourtv/aerials/source/, slow.py makes the slowed, smooth versions in
+# ~/.cleanyourtv/aerials/, and install.sh puts those on the stick.
+# To use your own footage instead, drop 16:9 H.264 .mp4 files into ~/.cleanyourtv/aerials/ (already at the speed you
+# want) and delete the ones you don't.
+16298299  30  https://www.pexels.com/video/drone-flying-over-cliffs-and-blue-ocean-with-waves-16298299/
+19376556  25  https://www.pexels.com/video/a-desert-with-sand-dunes-and-some-bushes-19376556/
+20233732  30  https://www.pexels.com/video/drone-orbit-shot-of-a-coastal-landmark-by-the-cliffs-and-atlantic-ocean-in-portugal-20233732/
+3235598   24  https://www.pexels.com/video/drone-footage-of-the-forest-and-the-mountain-3235598/
+5715137   30  https://www.pexels.com/video/mountains-drone-shot-5715137/
+6323175   30  https://www.pexels.com/video/drone-footage-of-the-cliff-coast-6323175/
+7624428   30  https://www.pexels.com/video/drone-footage-of-desert-7624428/
+8226944   30  https://www.pexels.com/video/drone-footage-of-a-waterfall-8226944/
+8761030   30  https://www.pexels.com/video/aerial-footage-of-mountains-8761030/
+8774553   30  https://www.pexels.com/video/drone-footage-of-sand-dunes-8774553/
+9834221   30  https://www.pexels.com/video/drone-footage-of-coastal-cliffs-and-sea-9834221/

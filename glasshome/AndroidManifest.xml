@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glass Home: a tvOS-style home screen for Fire OS, which will not hand Home to another app. HomeWatcher follows the
+     system log (READ_LOGS, granted over ADB by install.sh) and opens HomeActivity whenever Amazon's home is started. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.glasshome">
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-permission android:name="android.permission.READ_LOGS" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@drawable/icon"
+        android:banner="@drawable/banner"
+        android:allowBackup="false"
+        android:hardwareAccelerated="true"
+        android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+
+        <activity
+            android:name=".HomeActivity"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".HomeWatcher" android:exported="false" />
+
+        <!-- The sleep timer from Control Center going off. -->
+        <receiver android:name=".SleepReceiver" android:exported="false" />
+
+        <!-- The screensaver Android starts when the stick is idle. Made the active one by glasshome/install.sh, which
+             saves the original value first so the remove option can put it back. -->
+        <service
+            android:name=".GlassDream"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+        <!-- The same screensaver, started on purpose from Control Center (Sleep and the sleep timer). -->
+        <activity
+            android:name=".SaverActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" />
+
+        <!-- BOOT_COMPLETED goes to ~100 receivers one at a time on a Fire TV Stick; ordered broadcasts go out by
+             priority, so ask to be near the front. -->
+        <receiver android:name=".BootReceiver">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

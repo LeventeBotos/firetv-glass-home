@@ -1,0 +1,8 @@
+tools/venv/
+# ADB key and the Fire TV pairing token
+tools/adbkey/
+glasshome/build/
+__pycache__/
+*.pyc
+.DS_Store
+*.apk
