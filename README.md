@@ -79,7 +79,11 @@ uninstalled, nothing is disabled. One command puts it all back.
    confirm it there, then re-run the command. This step also downloads a few seconds of free aerial
    footage for the screensaver; skip that with `NO_AERIALS=1 TV_HOST=... glasshome/install.sh` if you'd
    rather just use the animated gradient.
-6. Press **Home** on the remote. That's it.
+6. **Turn off Fire OS's own navigation sounds**, so they don't play on top of Glass Home's own
+   focus/select sounds: Settings → Accessibility → Navigation Sounds → Off (the exact path varies a
+   little by Fire OS version — look for "Navigation Sounds" or "Sound Effects" under Accessibility or
+   Display & Sounds).
+7. Press **Home** on the remote. That's it.
 
 ## Using it
 
