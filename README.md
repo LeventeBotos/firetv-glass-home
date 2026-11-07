@@ -63,8 +63,8 @@ uninstalled, nothing is disabled. One command puts it all back.
 2. **Find the stick's IP address.** Settings → My Fire TV → About → Network.
 3. **Clone this repository** on your computer:
    ```bash
-   git clone https://github.com/<you>/glass-home.git
-   cd glass-home
+   git clone https://github.com/<you>/firetv-glass-home.git
+   cd firetv-glass-home
    ```
 4. **Set up the Python side:**
    ```bash
