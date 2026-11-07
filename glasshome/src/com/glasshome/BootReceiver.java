@@ -9,5 +9,6 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         context.startService(new Intent(context, HomeWatcher.class));
+        com.glasshome.remote.RemoteService.start(context);
     }
 }

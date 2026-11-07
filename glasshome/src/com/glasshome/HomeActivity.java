@@ -87,6 +87,7 @@ public class HomeActivity extends Activity {
         super.onCreate(state);
         k = getResources().getDisplayMetrics().density;   // the numbers above are dp: pixels = value * density
         startService(new Intent(this, HomeWatcher.class));
+        com.glasshome.remote.RemoteService.start(this);
         store = new LayoutStore(this);
         sounds = new Sounds(this, store);
 

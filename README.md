@@ -33,6 +33,9 @@ uninstalled, nothing is disabled. One command puts it all back.
 - **Control Center** (the status pill, top right): Sleep, Wi-Fi, Screensaver on/off, Audio output,
   Sleep Timer, AirPlay/casting, volume, accessibility and a brightness-style placeholder — opened with
   a click or the remote's Menu button
+- **The iPhone's own Remote works with it**: the stick shows up as an Apple TV called *Nappali* in Control
+  Center's Remote — buttons, a swipe area, play/pause, Home — no app to install on the phone
+  (see [iPhone Remote](#iphone-remote-optional) for what is, and is not, finished)
 - **Move and hide apps**: long-press (or Menu) an icon for Move / Hide, just like tvOS's App Store page
 - **A screensaver** using the same animated gradient, or free aerial nature footage (Pexels, optional,
   fetched once and cached) — no Apple Aerial content
@@ -175,6 +178,61 @@ TV_HOST=192.168.1.50 glasshome/airplay/setup.py --remove
 Once installed, open it from your iPhone/Mac's AirPlay picker like any other AirPlay receiver, or tap
 the casting icon in Control Center to bring it to the front.
 
+## iPhone Remote (optional)
+
+The stick appears as an Apple TV named **Nappali** in the Remote that is already on your iPhone (Control Center →
+the Remote button), and the phone controls it the way it would an Apple TV: Menu (Back), Select, the TV button
+(Home), play/pause, the volume buttons and a touch area to swipe on. Nothing is installed on the phone, and once it
+is set up the phone talks to the stick directly — your computer is not in the path.
+
+**Using it.** Open the Remote on the iPhone, pick *Nappali* and type the four-digit code Glass Home draws on the TV
+(over whatever is showing). That pairing is done once; afterwards the phone reconnects by itself. A swipe moves
+one step per bit of travel and keeps moving if you keep swiping; Select is the button, not a tap.
+
+**What a computer still has to do: start the key helper, after every reboot of the stick.** Only the ADB shell
+user can press keys inside other apps on a stock Fire stick, so Glass Home keeps a small helper running as that
+user (`glasshome/src/com/glasshome/remote/Injector.java`) and the phone's presses are handed to it — a key costs
+milliseconds, where `input keyevent` costs over a second. Glass Home would start that helper itself through the
+stick's own ADB if it could, but this Fire OS (6.7) ignores ADB connections that come from the stick itself: tested
+with the app, with the stick's own shell and via the stick's LAN address, while a computer connected without
+trouble at the same moment. So `install.sh` starts the helper from your computer, once, and from then on it runs by
+itself: switch the computer off, restart Glass Home, reinstall it — it keeps going. It stops when the stick
+reboots (a power cut, an update, a restart). Until it is started again the phone still pairs and connects, but its
+buttons do nothing. To start it again:
+
+```bash
+TV_HOST=192.168.1.50 tools/venv/bin/python -I glasshome/remote/helper.py
+```
+
+The helper listens only on the stick's loopback and only obeys a client that knows a random token; the token reaches
+it through a pipe (never on a command line), and the app is told where the helper is by a broadcast that only the ADB
+shell may send.
+
+**How it works.** `glasshome/src/com/glasshome/remote/`:
+- `Advertiser` announces the stick over mDNS as `_companion-link._tcp` with the records an Apple TV publishes — which
+  records the phone insists on was found by trying them against a real iPhone.
+- `CompanionServer` speaks the Companion link: HomeKit-style pair-setup (a PIN, SRP-6a over a 3072-bit group) and
+  pair-verify (X25519, Ed25519), then ChaCha20-Poly1305 encrypted OPACK messages carrying button presses (`_hidC`)
+  and touches (`_hidT`). Android 7 has none of those primitives, so `remote/crypto/` has them (on `BigInteger`),
+  checked in `tests/java/CryptoTest.java` against the RFC vectors and the JDK's own implementations.
+- `Gestures` turns swipes into D-pad presses; `InputBridge` talks to the helper; `PairingStore` remembers the stick's
+  identity and the paired phones; `PinOverlay` draws the code.
+- The protocol facts come from reading [pyatv](https://github.com/postlund/pyatv) (MIT) and from what an iPhone actually
+  sent; no Apple code or assets are used.
+
+**Tested.** On a Fire TV Stick 4K (2018), Fire OS 6.7: discovery, the PIN on the TV, pairing, reconnecting without
+the PIN and button presses reaching the TV (a Home press from the client came out as a real Home press), driven by
+pyatv's client against the Glass Home service on the stick. An earlier prototype of the same protocol running on a
+computer was paired from a real iPhone and controlled the stick through the helper (`tests/companion_client_check.py`
+and `tests/java/HostServer.java` run the server on a computer against pyatv). The finished on-stick service has not
+yet been paired from an iPhone by anyone but its author's test client.
+
+**Limits.** The Remote shows only a touch area for a device that is not a real Apple TV: no Siri button, no
+keyboard entry, no trackpad click. The volume buttons press the stick's own volume keys, which do not reach a TV
+that is controlled over HDMI-CEC or infrared. The name is fixed to "Nappali" for now (`PairingStore.DEFAULT_NAME`).
+Only one phone can be pairing at a time. To forget every paired phone, clear Glass Home's data in Settings →
+Applications, or `pm clear com.glasshome` over ADB.
+
 ## Uninstalling
 
 ```bash
@@ -204,8 +262,9 @@ Home press.
 ## Known limits
 
 - This **replaces the Home button and launcher UI only**. It cannot act as an HDMI-CEC or Bluetooth
-  remote target, inject D-pad/navigation events into *other* apps, or otherwise act like a jailbroken
-  stick — none of that is possible without root on stock Fire OS.
+  remote target or otherwise act like a jailbroken stick — none of that is possible without root on stock
+  Fire OS. Pressing keys inside *other* apps is possible only for the iPhone Remote, through a helper that
+  a computer has to start after each reboot of the stick (see [iPhone Remote](#iphone-remote-optional)).
 - The animated backdrop and app tiles are drawn at a small internal resolution and scaled up for
   performance; this is intentional and matches how the real tvOS wallpaper engine is similarly cheap.
 - Built and verified against one specific device/Fire OS version (see Requirements). Other Fire TV
@@ -224,6 +283,10 @@ Home press.
 - The optional AirPlay receiver is [android-airplay-server](https://github.com/jqssun/android-airplay-server)
   by jqssun (GPL-3.0, built on UxPlay) — `glasshome/airplay/setup.py` downloads and verifies it against a
   pinned checksum; it is not bundled in this repository.
+- The iPhone Remote support was worked out from [pyatv](https://github.com/postlund/pyatv) (MIT, by Pierre Ståhl)
+  and from the earlier [AndroidAppleRemote](https://github.com/sagiweizmann/AndroidAppleRemote) and
+  [windows-apple-remote](https://github.com/aryakvn/windows-apple-remote) projects, which showed the idea works;
+  none of their code is used here.
 - No Apple software, fonts, sounds or imagery are included or downloaded. The look is a clean-room
   re-implementation from measurements of a real tvOS 26 screenshot, using the system font and
   originally made click/focus sounds.

@@ -36,6 +36,10 @@ printf '%s\n' \
   "am force-stop com.glasshome" \
   "am start -n com.glasshome/.HomeActivity" | tv --batch
 
+# the iPhone Remote's key helper: started from here because Fire OS refuses ADB connections from the stick itself (see
+# glasshome/remote/helper.py). It keeps running without this computer until the stick is rebooted.
+"$PY" -I glasshome/remote/helper.py || echo "The iPhone Remote's key helper did not start; run glasshome/remote/helper.py again when the stick is up."
+
 # the screensaver's footage: free aerial nature clips, fetched once into ~/.cleanyourtv/aerials/ and sent over the
 # network (ADB is far too slow for video). Skip with NO_AERIALS=1; the screensaver then shows the slow gradient.
 if [ -z "${NO_AERIALS:-}" ]; then

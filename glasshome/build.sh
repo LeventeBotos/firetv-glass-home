@@ -15,7 +15,8 @@ rm -rf build && mkdir -p build/gen build/classes build/dex
 # minSdk 22 is Fire OS 5 (Android 5.1), the oldest Fire TV that still takes ADB from a computer
 "$BT/aapt2" link -o build/unsigned.apk -I "$JAR" --manifest AndroidManifest.xml --java build/gen \
   --min-sdk-version 22 --target-sdk-version 25 --version-code 1 --version-name 1.0 build/res.zip
-javac -nowarn --release 8 -classpath "$JAR" -d build/classes $(find src build/gen -name '*.java')
+# -parameters: JDK 21+ writes parameter metadata with no names for inner-class constructors, which this d8 crashes on
+javac -nowarn --release 8 -parameters -classpath "$JAR" -d build/classes $(find src build/gen -name '*.java')
 "$BT/d8" --min-api 22 --lib "$JAR" --output build/dex $(find build/classes -name '*.class')
 (cd build/dex && zip -q ../unsigned.apk classes.dex)
 "$BT/zipalign" -f 4 build/unsigned.apk build/aligned.apk
