@@ -59,6 +59,33 @@ final class LayoutStore {
         prefs.edit().putBoolean("sounds", on).apply();
     }
 
+    /** Connect AirPods by themselves when their case opens or they go in an ear. */
+    boolean autoConnect() {
+        return prefs.getBoolean("airpodsAuto", true);
+    }
+
+    void setAutoConnect(boolean on) {
+        prefs.edit().putBoolean("airpodsAuto", on).apply();
+    }
+
+    /** Pause when both buds come out, resume when one goes back in. */
+    boolean earDetection() {
+        return prefs.getBoolean("airpodsEar", true);
+    }
+
+    void setEarDetection(boolean on) {
+        prefs.edit().putBoolean("airpodsEar", on).apply();
+    }
+
+    /** Bluetooth address of the headphones that were last the output, tried first on auto-connect. */
+    String lastHeadphones() {
+        return prefs.getString("lastHeadphones", "");
+    }
+
+    void setLastHeadphones(String address) {
+        prefs.edit().putString("lastHeadphones", address).apply();
+    }
+
     private static List<String> split(String s) {
         List<String> out = new ArrayList<String>();
         for (String part : s.split(",")) {

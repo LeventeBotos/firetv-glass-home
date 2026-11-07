@@ -6,6 +6,7 @@ import android.net.wifi.WifiManager;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 
@@ -29,14 +30,18 @@ final class ControlCenterView extends FrameLayout {
     static final float RIGHT = 24.5f, TOP = 63.5f;
 
     private final FrameLayout panel;
+    private final AudioPanelView audioPanel;
+    private final AirPodsMonitor pods;
+    private boolean audioOpen;
     private final Sounds sounds;
     private final Runnable onClose;
     private final GlassButton sleep, wifi, saver, audio, timer, airplay, uiSounds, access, settings;
     private final float k;
     private boolean open;
 
-    ControlCenterView(Context context, GradientBackdrop backdrop, Sounds sounds, Runnable onClose) {
+    ControlCenterView(Context context, GradientBackdrop backdrop, Sounds sounds, LayoutStore store, Runnable onClose) {
         super(context);
+        pods = AirPodsMonitor.get(context);
         this.sounds = sounds;
         this.onClose = onClose;
         k = context.getResources().getDisplayMetrics().density;
@@ -47,6 +52,12 @@ final class ControlCenterView extends FrameLayout {
         LayoutParams pp = new LayoutParams(Math.round(PANEL_W * k), Math.round(PANEL_H * k), Gravity.TOP | Gravity.END);
         pp.setMargins(0, Math.round(TOP * k), Math.round(RIGHT * k), 0);
         addView(panel, pp);
+
+        // the Audio page: a second glass panel in the same corner, swapped in when the Audio tile is chosen
+        audioPanel = new AudioPanelView(context, backdrop, sounds, store, this::closeAll);
+        LayoutParams ap = new LayoutParams(Math.round(PANEL_W * k), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
+        ap.setMargins(0, Math.round(TOP * k), Math.round(RIGHT * k), 0);
+        addView(audioPanel, ap);
 
         float left = PAD, right = PAD + TILE_W + GAP;
         float row2 = PAD + 2 * TILE_H + GAP + GAP, row3 = row2 + TILE_H + GAP;
@@ -63,11 +74,11 @@ final class ControlCenterView extends FrameLayout {
         settings = tile(GlassButton.ICON, Glyphs.GEAR, "Settings", null, PAD + 3 * step, row3, SMALL, SMALL);
 
         sleep.setOnClickListener(v -> {
-            close();
+            closeAll();
             SleepControl.sleepNow(getContext());
         });
         wifi.setOnClickListener(v -> go(Settings.ACTION_WIFI_SETTINGS));
-        audio.setOnClickListener(v -> go(Settings.ACTION_BLUETOOTH_SETTINGS));
+        audio.setOnClickListener(v -> showAudio());
         saver.setOnClickListener(v -> toggleSaver());
         timer.setOnClickListener(v -> {
             sounds.play(Sounds.SELECT);
@@ -75,7 +86,7 @@ final class ControlCenterView extends FrameLayout {
             refresh();
         });
         airplay.setOnClickListener(v -> {
-            close();
+            closeAll();
             // the AirPlay receiver set up by glasshome/airplay/setup.py; AirReceiver is only the fallback
             if (!isInstalled("io.github.jqssun.airplay")) {
                 Launch.app(getContext(), "com.softmedia.receiver", "No AirPlay receiver is installed.");
@@ -133,9 +144,25 @@ final class ControlCenterView extends FrameLayout {
         sleep.requestFocus();
     }
 
+    /** Back/Menu: collapse the Audio page first, then the whole panel. */
     void close() {
+        if (audioOpen) {
+            hideAudio();
+            return;
+        }
+        closeAll();
+    }
+
+    private void closeAll() {
         if (!open) {
             return;
+        }
+        if (audioOpen) {
+            audioOpen = false;
+            audioPanel.unbind();
+            audioPanel.setVisibility(GONE);
+            panel.setVisibility(VISIBLE);
+            panel.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         }
         open = false;
         sounds.play(Sounds.BACK);
@@ -145,8 +172,67 @@ final class ControlCenterView extends FrameLayout {
     }
 
     private void go(String action) {
-        close();
+        closeAll();
         Launch.settings(getContext(), action, "Couldn't open that settings page.");
+    }
+
+    /** The Audio page, as if the TV button were held: opens Control Center straight onto it. */
+    void openAudio() {
+        if (!open) {
+            open = true;
+            refresh();
+            setVisibility(VISIBLE);
+            panel.setAlpha(0f);
+            panel.setVisibility(INVISIBLE);
+        }
+        if (!audioOpen) {
+            showAudio();
+        }
+    }
+
+    boolean isAudioOpen() {
+        return audioOpen;
+    }
+
+    private void showAudio() {
+        audioOpen = true;
+        sounds.play(Sounds.SELECT);
+        panel.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        panel.animate().cancel();
+        panel.animate().alpha(0f).setDuration(140).withEndAction(() -> {
+            if (audioOpen) {
+                panel.setVisibility(INVISIBLE);
+            }
+        }).start();
+        audioPanel.bind();
+        audioPanel.setVisibility(VISIBLE);
+        audioPanel.setAlpha(0f);
+        audioPanel.setTranslationY(-12 * k);
+        audioPanel.setScaleX(0.97f);
+        audioPanel.setScaleY(0.97f);
+        audioPanel.setPivotX(Math.round(PANEL_W * k));
+        audioPanel.setPivotY(0f);
+        audioPanel.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f).withLayer()
+                .setInterpolator(new DecelerateInterpolator(1.6f)).setDuration(260).start();
+    }
+
+    private void hideAudio() {
+        audioOpen = false;
+        sounds.play(Sounds.BACK);
+        audioPanel.unbind();
+        audioPanel.animate().cancel();
+        audioPanel.animate().alpha(0f).translationY(-8 * k).withLayer().setDuration(160)
+                .withEndAction(() -> {
+                    if (!audioOpen) {
+                        audioPanel.setVisibility(GONE);
+                    }
+                }).start();
+        refresh();
+        panel.setVisibility(VISIBLE);
+        panel.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+        panel.animate().cancel();
+        panel.animate().alpha(1f).setDuration(200).start();
+        audio.requestFocus();
     }
 
     private void toggleSaver() {
@@ -170,6 +256,12 @@ final class ControlCenterView extends FrameLayout {
         int minutes = SleepControl.timerMinutes(c);
         timer.setLabel("Sleep Timer", minutes == 0 ? "Off" : minutes + " min");
         uiSounds.setOff(!sounds.isOn());
+        // Audio: the live output, with the buds' level when AirPods are in use
+        String out = pods.outputName();
+        AirPodsAdvert a = pods.fresh();
+        audio.setGlyph(out != null ? Glyphs.EARBUDS : Glyphs.AUDIO);
+        audio.setLabel("Audio", out == null ? "TV Speakers"
+                : (a != null && !a.pairing && a.budsLow() != AirPodsAdvert.UNKNOWN ? out + " · " + a.budsLow() + "%" : out));
     }
 
     private static String networkName(Context c) {

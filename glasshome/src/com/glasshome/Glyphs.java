@@ -11,7 +11,7 @@ import android.graphics.RectF;
  */
 final class Glyphs {
     static final int POWER = 0, WIFI = 1, SCREEN = 2, AUDIO = 3, TIMER = 4, AIRPLAY = 5, SOUND = 6, ACCESS = 7,
-            GEAR = 8, TOGGLES = 9;
+            GEAR = 8, TOGGLES = 9, EARBUDS = 10, CASE = 11;
 
     private static final Path path = new Path();
     private static final RectF box = new RectF();
@@ -113,9 +113,53 @@ final class Glyphs {
                 c.drawRoundRect(box, 3 * u, 3 * u, paint);
                 dot(c, cx - 4.5f * u, cy + 4 * u, 1.6f * u, paint);
                 break;
+            case EARBUDS:
+                // two buds, each a round head with a stem on its outer side (our own drawing)
+                for (int s = -1; s <= 1; s += 2) {
+                    box.set(cx + s * 5.5f * u - 4 * u, cy - 8.5f * u, cx + s * 5.5f * u + 4 * u, cy - 0.5f * u);
+                    c.drawOval(box, paint);
+                    c.drawLine(cx + s * 8.6f * u, cy - 3 * u, cx + s * 8.6f * u, cy + 9 * u, paint);
+                }
+                break;
+            case CASE:
+                box.set(cx - 9 * u, cy - 6 * u, cx + 9 * u, cy + 8 * u);
+                c.drawRoundRect(box, 5 * u, 5 * u, paint);
+                c.drawLine(cx - 9 * u, cy - 0.5f * u, cx + 9 * u, cy - 0.5f * u, paint);
+                dot(c, cx, cy + 3 * u, 1.2f * u, paint);
+                break;
             default:
                 break;
         }
+    }
+
+    /** A battery ring: a faint track and a sweep of `fraction` (0-1) from the top. paint's colour is the sweep colour. */
+    static void ring(Canvas c, float cx, float cy, float radius, float fraction, float stroke, int track, Paint paint) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(stroke);
+        int sweepColor = paint.getColor();
+        box.set(cx - radius, cy - radius, cx + radius, cy + radius);
+        paint.setColor(track);
+        c.drawOval(box, paint);
+        paint.setColor(sweepColor);
+        if (fraction > 0f) {
+            c.drawArc(box, -90, 360f * Math.min(1f, fraction), false, paint);
+        }
+    }
+
+    /** A small lightning bolt for "charging", centred on (cx, cy), about `size` px tall. */
+    static void bolt(Canvas c, float cx, float cy, float size, Paint paint) {
+        float u = size / 10f;
+        path.reset();
+        path.moveTo(cx + 1.5f * u, cy - 5 * u);
+        path.lineTo(cx - 2.5f * u, cy + 0.5f * u);
+        path.lineTo(cx - 0.2f * u, cy + 0.5f * u);
+        path.lineTo(cx - 1.5f * u, cy + 5 * u);
+        path.lineTo(cx + 2.5f * u, cy - 0.8f * u);
+        path.lineTo(cx + 0.2f * u, cy - 0.8f * u);
+        path.close();
+        paint.setStyle(Paint.Style.FILL);
+        c.drawPath(path, paint);
     }
 
     private static void speaker(Canvas c, float cx, float cy, float u, Paint paint) {

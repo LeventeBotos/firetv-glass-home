@@ -3,6 +3,13 @@
 # nothing downloaded. Needs a JDK (17 works) and any build-tools and platform. Output: glasshome/build/glasshome.apk
 set -euo pipefail
 cd "$(dirname "$0")"
+# build.sh --test: run the AirPods advert parser's tests on this computer (plain Java, no Android needed) and stop
+if [ "${1:-}" = "--test" ]; then
+  T="$(mktemp -d)"
+  javac -nowarn -d "$T" src/com/glasshome/AirPodsAdvert.java test/com/glasshome/AirPodsAdvertTest.java
+  java -cp "$T" com.glasshome.AirPodsAdvertTest
+  exit $?
+fi
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
 [ -d "$SDK/build-tools" ] || SDK=/opt/homebrew/share/android-commandlinetools
 [ -d "$SDK" ] || SDK="$HOME/Android/Sdk"

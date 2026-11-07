@@ -8,10 +8,17 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- The iPhone remote: listen for the phone, announce the stick on the network (mDNS), and reach the stick's own ADB. -->
+    <!-- The iPhone remote: listen for the phone, announce the stick on the network (mDNS), and reach the key helper. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- AirPods: see them (BLE scan needs a location permission on Android 6+, granted over ADB by install.sh),
+         connect/disconnect/pair them, and draw the "Connected" banner over other apps (also allowed by install.sh). -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <application
         android:label="@string/app_name"

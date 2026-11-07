@@ -65,6 +65,10 @@ public class HomeActivity extends Activity {
     private GlassButton pillButton;
     private View returnFocus;
     private ContextMenuView contextMenu;
+    private AirPodsSetupCard setupCard;
+    private AirPodsMonitor pods;
+    private View podsIcon;                  // the earbuds in the status pill while headphones are the output
+    private boolean resumed;
     private boolean relayouting;             // a relayout re-seats tiles: focus changes then apply instantly
     private boolean moving;                  // move mode: the D-pad moves the picked tile instead of focus
     private boolean ignoreCenterUp;          // the release of the long press that started a move is not a drop
@@ -86,6 +90,7 @@ public class HomeActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         k = getResources().getDisplayMetrics().density;   // the numbers above are dp: pixels = value * density
+        pods = AirPodsMonitor.get(this);   // before the status pill, which shows the earbuds icon
         startService(new Intent(this, HomeWatcher.class));
         com.glasshome.remote.RemoteService.start(this);
         store = new LayoutStore(this);
@@ -113,11 +118,54 @@ public class HomeActivity extends Activity {
 
         layoutGrid(null);
         root.addView(statusPill(k), pillParams(k));
-        controlCenter = new ControlCenterView(this, backdrop, sounds, this::controlCenterClosed);
+        controlCenter = new ControlCenterView(this, backdrop, sounds, store, this::controlCenterClosed);
         root.addView(controlCenter, new FrameLayout.LayoutParams(-1, -1));
         contextMenu = new ContextMenuView(this, backdrop, sounds, this::exitModal);
         root.addView(contextMenu, new FrameLayout.LayoutParams(-1, -1));
+        setupCard = new AirPodsSetupCard(this, backdrop, sounds, () -> pods.pair(), this::exitModal);
+        root.addView(setupCard, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
+    }
+
+    /** The earbuds shown in the status pill while headphones are the output. */
+    private static final class PodsIcon extends View {
+        private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final float k;
+
+        PodsIcon(android.content.Context c, float k) {
+            super(c);
+            this.k = k;
+        }
+
+        @Override
+        protected void onDraw(Canvas c) {
+            ink.setColor(0xE6FFFFFF);
+            Glyphs.draw(c, Glyphs.EARBUDS, getWidth() / 2f, getHeight() / 2f, 15 * k, ink, false);
+        }
+    }
+
+    private final AirPodsMonitor.Listener podsListener = event -> {
+        podsIcon.setVisibility(pods.connected() ? View.VISIBLE : View.GONE);
+        if (event == AirPodsMonitor.EVENT_SETUP && resumed && !moving && !controlCenter.isOpen() && !contextMenu.isOpen()
+                && !setupCard.isOpen()) {
+            enterModal();
+            setupCard.show();
+        } else if (event == AirPodsMonitor.EVENT_PAIR_FAILED && setupCard.isOpen()) {
+            setupCard.setStatus("Couldn't connect. Hold the button on the case and try again.");
+        } else if (event == AirPodsMonitor.EVENT_STATE && pods.connected() && setupCard.isOpen()) {
+            setupCard.dismiss();
+        }
+    };
+
+    /** Hold Play/Pause (the nearest thing to holding the TV button): Control Center, straight to Audio. */
+    private void openAudioPage() {
+        if (moving || contextMenu.isOpen() || setupCard.isOpen()) {
+            return;
+        }
+        if (!controlCenter.isOpen()) {
+            enterModal();
+        }
+        controlCenter.openAudio();
     }
 
     /**
@@ -306,7 +354,7 @@ public class HomeActivity extends Activity {
                 plain = 0xFF48484A;
                 break;
             case AppCatalog.SETTINGS:
-                action = () -> Launch.start(this, new Intent(Settings.ACTION_SETTINGS), "Couldn't open Settings.");
+                action = () -> Launch.settings(this, Settings.ACTION_SETTINGS, "Couldn't open Settings.");
                 plain = 0xFF48484A;
                 break;
             case AppCatalog.HIDDEN_TOGGLE:
@@ -473,8 +521,13 @@ public class HomeActivity extends Activity {
     private View statusPill(float k) {
         LinearLayout pill = new LinearLayout(this);
         pill.setGravity(Gravity.CENTER_VERTICAL);
-        pill.setPadding(Math.round(11 * k), Math.round(3 * k), Math.round(3 * k), Math.round(3 * k));
+        pill.setPadding(Math.round(9 * k), Math.round(3 * k), Math.round(3 * k), Math.round(3 * k));
         pill.setBackground(new GlassDrawable(pill, backdrop, 14.75f * k, false));
+        podsIcon = new PodsIcon(this, k);
+        podsIcon.setVisibility(pods.connected() ? View.VISIBLE : View.GONE);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(Math.round(20 * k), Math.round(20 * k));
+        ip.setMargins(0, 0, Math.round(5 * k), 0);
+        pill.addView(podsIcon, ip);
         TextClock clock = new TextClock(this);
         clock.setFormat12Hour("h:mm");
         clock.setFormat24Hour("H:mm");
@@ -515,7 +568,12 @@ public class HomeActivity extends Activity {
         if (moving) {
             return handleMoveKey(e, code);
         }
-        boolean modal = controlCenter.isOpen() || contextMenu.isOpen();
+        if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE && e.getAction() == KeyEvent.ACTION_DOWN
+                && (e.getFlags() & KeyEvent.FLAG_LONG_PRESS) != 0) {
+            openAudioPage();
+            return true;
+        }
+        boolean modal = controlCenter.isOpen() || contextMenu.isOpen() || setupCard.isOpen();
         if (e.getAction() == KeyEvent.ACTION_DOWN && !modal) {
             int at = tiles.indexOf(getCurrentFocus());
             if (code == KeyEvent.KEYCODE_DPAD_UP && at >= 0 && at < COLUMNS) {
@@ -529,7 +587,9 @@ public class HomeActivity extends Activity {
             }
         }
         if (e.getAction() == KeyEvent.ACTION_UP && code == KeyEvent.KEYCODE_MENU) {
-            if (contextMenu.isOpen()) {
+            if (setupCard.isOpen()) {
+                setupCard.dismiss();
+            } else if (contextMenu.isOpen()) {
                 contextMenu.close();
             } else if (controlCenter.isOpen()) {
                 controlCenter.close();
@@ -731,6 +791,10 @@ public class HomeActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (setupCard.isOpen()) {
+            setupCard.dismiss();
+            return;
+        }
         if (contextMenu.isOpen()) {
             contextMenu.close();
             return;
@@ -756,6 +820,9 @@ public class HomeActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        resumed = true;
+        pods.addListener(podsListener);
+        podsIcon.setVisibility(pods.connected() ? View.VISIBLE : View.GONE);
         HomeWatcher.pause(0);   // back from Settings or Amazon's home: the next Home press brings this screen up again
         refreshIfAppsChanged();
     }
@@ -772,6 +839,13 @@ public class HomeActivity extends Activity {
             int at = tiles.indexOf(focus);
             layoutGrid(at >= 0 && at < entries.size() ? entries.get(at).id : null);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        resumed = false;
+        pods.removeListener(podsListener);
+        super.onPause();
     }
 
     @Override

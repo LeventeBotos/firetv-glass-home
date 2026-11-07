@@ -3,8 +3,10 @@
 # Usage:   TV_HOST=192.168.68.104 glasshome/install.sh
 # Undo:    TV_HOST=192.168.68.104 glasshome/install.sh --remove     (Amazon's home is back on the next Home press)
 #
-# Nothing on the stick is uninstalled or disabled by this. It adds one app (com.glasshome), grants it two permissions
-# (READ_LOGS to see Home presses, WRITE_SECURE_SETTINGS so Control Center can switch the screensaver) and makes the
+# Nothing on the stick is uninstalled or disabled by this. It adds one app (com.glasshome), grants it four permissions
+# (READ_LOGS to see Home presses, WRITE_SECURE_SETTINGS so Control Center can switch the screensaver, location so it can
+# see AirPods over Bluetooth LE, and drawing the AirPods banner over other apps; the last two vanish with the app on
+# --remove, so record.py has nothing to restore for them) and makes the
 # app's screensaver the active one (aerial clips go to the app's own folder on the stick). What was there before is
 # recorded in ~/.cleanyourtv/glasshome-<host>.json the first time (the first record wins); --remove puts it all back.
 set -euo pipefail
@@ -32,6 +34,8 @@ printf '%s\n' \
   "rm /data/local/tmp/glasshome.apk" \
   "pm grant com.glasshome android.permission.READ_LOGS" \
   "pm grant com.glasshome android.permission.WRITE_SECURE_SETTINGS" \
+  "pm grant com.glasshome android.permission.ACCESS_COARSE_LOCATION" \
+  "appops set com.glasshome SYSTEM_ALERT_WINDOW allow" \
   "settings put secure screensaver_components com.glasshome/.GlassDream" \
   "am force-stop com.glasshome" \
   "am start -n com.glasshome/.HomeActivity" | tv --batch

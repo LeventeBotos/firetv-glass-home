@@ -51,7 +51,19 @@ public class HomeWatcher extends Service {
             reader.setDaemon(true);
             reader.start();
         }
+        // AirPods: auto-connect, the connected banner, ear detection (does nothing if the stick has no Bluetooth)
+        try {
+            AirPodsMonitor.get(this).start();
+        } catch (RuntimeException e) {
+            android.util.Log.w(AirPodsMonitor.TAG, "AirPods support not started: " + e);
+        }
         return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        AirPodsMonitor.get(this).stop();
+        super.onDestroy();
     }
 
     private void follow() {

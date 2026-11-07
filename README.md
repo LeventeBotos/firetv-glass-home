@@ -33,6 +33,9 @@ uninstalled, nothing is disabled. One command puts it all back.
 - **Control Center** (the status pill, top right): Sleep, Wi-Fi, Screensaver on/off, Audio output,
   Sleep Timer, AirPlay/casting, volume, accessibility and a brightness-style placeholder — opened with
   a click or the remote's Menu button
+- **AirPods that just work**: open the case or put a bud in and they connect by themselves, a glass
+  "Connected" banner slides in over whatever you're watching with live battery rings, taking both buds out
+  pauses playback, and Control Center's Audio page switches outputs and shows left/right/case battery
 - **The iPhone's own Remote works with it**: the stick shows up as an Apple TV called *Nappali* in Control
   Center's Remote — buttons, a swipe area, play/pause, Home — no app to install on the phone
   (see [iPhone Remote](#iphone-remote-optional) for what is, and is not, finished)
@@ -178,6 +181,36 @@ TV_HOST=192.168.1.50 glasshome/airplay/setup.py --remove
 Once installed, open it from your iPhone/Mac's AirPlay picker like any other AirPlay receiver, or tap
 the casting icon in Control Center to bring it to the front.
 
+## AirPods
+
+Glass Home gives the stick the parts of Apple TV's AirPods experience that stock Fire OS allows:
+
+- **Connect on their own.** The stick listens for the Bluetooth LE adverts AirPods send when the case lid
+  opens or a bud goes in an ear. If paired AirPods are nearby it connects them (Settings → Controllers &
+  Bluetooth Devices → pair them once, or use the *Set Up AirPods* card below). Only AirPods within about 2 m
+  count, so a neighbour's don't trigger it.
+- **A banner, anywhere.** "AirPods Pro — Connected" slides down from the top with the earbuds popping in and
+  battery rings (buds, case, a green bolt when charging) sweeping up. It also shows for Disconnected and
+  Low Battery (20 % and 10 %). It's drawn in a window of its own, so it shows over Netflix or YouTube.
+- **Ear detection.** Both buds out for a second pauses what's playing; a bud back in resumes it (only if Glass
+  Home did the pausing). Switch it off in the Audio page.
+- **Set Up AirPods.** With none paired, holding the case button until the light flashes white raises a card on
+  the home screen with an animated case; *Connect* pairs them.
+- **Control Center → Audio.** The tile shows the live output ("AirPods Pro · 80%") and opens a page with TV
+  speakers and every paired audio device, battery rings, a volume bar (Left/Right) and Auto-Connect /
+  Ear Detection switches. **Holding Play/Pause** on the remote opens it directly, the nearest thing to holding
+  the TV button.
+
+`glasshome/install.sh` grants what this needs: the location permission (Android requires it for any Bluetooth LE
+scan) and permission to draw the banner over other apps. Both disappear with the app on `--remove`. If the
+Audio page says to turn Location on, switch it on in Fire OS's settings, or the stick can't see AirPods adverts.
+Watch what it sees with `adb logcat -s GlassAirPods`.
+
+**What it can't do** (no root): Noise Control (Noise Cancellation / Transparency / Adaptive), spatial audio and
+head tracking, Share Audio between two pairs, and the remote's own volume keys controlling the AirPods (they
+control the TV). Noise Control needs Apple's private AirPods protocol, and Android's Bluetooth stack blocks
+reaching it without root.
+
 ## iPhone Remote (optional)
 
 The stick appears as an Apple TV named **Nappali** in the Remote that is already on your iPhone (Control Center →
@@ -267,6 +300,9 @@ Home press.
   a computer has to start after each reboot of the stick (see [iPhone Remote](#iphone-remote-optional)).
 - The animated backdrop and app tiles are drawn at a small internal resolution and scaled up for
   performance; this is intentional and matches how the real tvOS wallpaper engine is similarly cheap.
+- The AirPods advert layout is from community reverse engineering, not Apple documentation; battery, ear and
+  lid fields were unit-tested against the documented layout (`glasshome/build.sh --test`) but not yet verified
+  against real AirPods on a stick.
 - Built and verified against one specific device/Fire OS version (see Requirements). Other Fire TV
   models may need small tweaks — PRs welcome.
 

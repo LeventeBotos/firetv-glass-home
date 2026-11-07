@@ -16,7 +16,7 @@ final class GlassButton extends View {
     static final int BIG = 0, WIDE = 1, ICON = 2, ROW = 3;
 
     private final int shape;
-    private final int glyph;
+    private int glyph;
     private final float radius;
     private final float k;
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -58,6 +58,13 @@ final class GlassButton extends View {
     void setIconDp(float dp) {
         iconDp = dp;
         invalidate();
+    }
+
+    void setGlyph(int glyph) {
+        if (this.glyph != glyph) {
+            this.glyph = glyph;
+            invalidate();
+        }
     }
 
     void setOff(boolean off) {
