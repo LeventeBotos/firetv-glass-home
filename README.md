@@ -213,6 +213,11 @@ Home press.
 
 ## Credits
 
+- Built on [CleanYourTV](https://github.com/Gathin23/cleanyourtv) by Gathin23 (MIT): the ADB client
+  (`tools/tv.py`) that every script here talks to the stick through comes from there.
+- That client reached this project by way of [whyashthakker/debloat-fire-stick-claude-code](https://github.com/whyashthakker/debloat-fire-stick-claude-code),
+  a fork of CleanYourTV, which is what Glass Home was actually built and tested inside of before being
+  split out into its own repository.
 - The screensaver's aerial footage (optional) is free stock video from
   [Pexels](https://www.pexels.com), used under the [Pexels License](https://www.pexels.com/license/).
   See `glasshome/aerials/CREDITS.md`. Apple's own Aerial videos are **not** used anywhere.
